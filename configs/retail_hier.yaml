@@ -1,0 +1,36 @@
+dataset:
+  name: synthetic_retail
+  season_length: 7
+  synthetic:
+    n_days: 730
+    regions: ["NA", "EU", "APAC"]
+    stores_per_region: 3
+    skus_per_store: 4
+
+backtest:
+  horizon: 14
+  n_folds: 6
+  stride: 14
+  min_train_size: 365
+  mode: rolling
+
+intervals:
+  alpha: 0.1
+  conformal: false
+
+base_model:
+  name: lightgbm
+  lags: [1, 2, 3, 7, 14, 21, 28]
+  n_estimators: 400
+  learning_rate: 0.05
+  num_leaves: 32
+
+reconciliation:
+  - bu
+  - td
+  - ols
+  - wls
+  - mint_shrink
+
+output_dir: runs/retail_hier
+seed: 7

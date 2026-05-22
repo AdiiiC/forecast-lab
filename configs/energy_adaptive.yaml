@@ -1,0 +1,47 @@
+dataset:
+  name: electricity_hourly
+  target: load_mw
+  freq: H
+  season_length: 168
+
+backtest:
+  horizon: 24
+  n_folds: 10
+  stride: 168
+  min_train_size: 4320
+  mode: rolling
+
+intervals:
+  alpha: 0.1
+  conformal: false        # we build wrappers explicitly below
+  calibration_size: 336
+
+models:
+  - {name: seasonal_naive}
+
+  # Plain LightGBM (native quantile intervals)
+  - name: lightgbm
+    lags: [1, 24, 168, 336]
+    n_estimators: 600
+
+  # ACI-wrapped ARIMA — adapts interval width online
+  - name: aci
+    gamma: 0.02
+    cal_n: 336
+    base:
+      name: arima
+      order: [2,1,2]
+      seasonal_order: [1,1,1,24]
+
+  # EnbPI-wrapped Prophet — bootstrap-ensemble intervals
+  - name: enbpi
+    B: 15
+    block_size: 24
+    cal_n: 336
+    base:
+      name: prophet
+      weekly: true
+      daily: true
+
+output_dir: runs/energy_adaptive
+seed: 7

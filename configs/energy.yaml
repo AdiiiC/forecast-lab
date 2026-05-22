@@ -1,0 +1,64 @@
+configs/energy_v2.yaml
+dataset:
+  name: electricity_hourly
+  target: load_mw
+  freq: H
+  season_length: 168
+
+backtest:
+  horizon: 24
+  n_folds: 8
+  stride: 168
+  min_train_size: 4320
+  mode: rolling
+
+intervals:
+  alpha: 0.1
+  conformal: true
+  calibration_size: 336
+
+models:
+  - {name: seasonal_naive}
+
+  - name: arima
+    order: [2,1,2]
+    seasonal_order: [1,1,1,24]
+
+  - {name: prophet, weekly: true, daily: true, yearly: false}
+
+  - name: lightgbm
+    lags: [1,2,3,24,25,48,168,336]
+    n_estimators: 800
+    learning_rate: 0.05
+    num_leaves: 64
+    search:
+      n_trials: 25
+      space:
+        n_estimators:   {type: int,   low: 200, high: 1500, step: 100}
+        learning_rate:  {type: float, low: 0.01, high: 0.2, log: true}
+        num_leaves:     {type: int,   low: 16, high: 256}
+        min_data_in_leaf: {type: int, low: 5, high: 100}
+
+  - {name: nbeats, input_size: 168, hidden: 256, stacks: 3, blocks: 3,
+     epochs: 30, batch_size: 256, dropout: 0.1}
+
+  - name: deepar
+    context: 168
+    hidden: 64
+    layers: 2
+    dropout: 0.1
+    dist: studentt
+    epochs: 20
+    batch_size: 128
+    n_samples: 200
+
+  - name: tft
+    context: 168
+    d_model: 64
+    heads: 4
+    dropout: 0.1
+    epochs: 30
+    batch_size: 128
+
+output_dir: runs/energy_v2
+seed: 7

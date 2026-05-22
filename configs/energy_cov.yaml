@@ -1,0 +1,40 @@
+dataset:
+  name: electricity_hourly
+  target: load_mw
+  freq: H
+  season_length: 168
+
+backtest:
+  horizon: 24
+  n_folds: 8
+  stride: 168
+  min_train_size: 4320
+  mode: rolling
+
+intervals:
+  alpha: 0.1
+  conformal: true
+  calibration_size: 336
+
+models:
+  - {name: seasonal_naive}
+
+  - name: lightgbm
+    lags: [1, 2, 3, 24, 25, 48, 168, 336]
+    n_estimators: 800
+    learning_rate: 0.05
+    num_leaves: 64
+    country: US        # holidays
+    observed_lags: [1, 24, 168]
+
+  - {name: tft,     context: 168, d_model: 64,  heads: 4, epochs: 30}
+  - {name: patchtst, context: 336, patch_len: 16, stride: 8, d_model: 128,
+     heads: 8, layers: 3, epochs: 30}
+  - {name: tide,    context: 336, hidden: 256, layers: 2, epochs: 40, country: US}
+  - {name: deepar,  context: 168, hidden: 64,  layers: 2, epochs: 20, dist: studentt}
+
+  # Zero-shot foundation model — installs are optional
+  - {name: chronos, model_id: amazon/chronos-t5-small, num_samples: 200}
+
+output_dir: runs/energy_cov
+seed: 7
