@@ -1,4 +1,3 @@
-configs/energy_v2.yaml
 dataset:
   name: electricity_hourly
   target: load_mw
