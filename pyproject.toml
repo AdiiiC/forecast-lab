@@ -1,0 +1,31 @@
+[project]
+name = "forecast-lab"
+version = "1.0.0"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dl        = ["torch>=2.2"]
+zero_shot = ["chronos-forecasting>=1.4", "timesfm>=1.2"]
+hier      = ["ruptures>=1.1"]
+mlops     = ["mlflow>=2.12", "optuna>=3.6"]
+serving   = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "gunicorn>=21"]
+streaming = ["kafka-python>=2.0"]
+warehouses = ["snowflake-connector-python>=3.7", "google-cloud-bigquery>=3.20"]
+dashboard = ["streamlit>=1.33"]
+pipelines = ["apache-airflow>=2.9", "prefect>=2.18"]
+test      = ["pytest>=8", "ruff>=0.4"]
+
+[project.scripts]
+forecast-lab      = "forecast_lab.cli:main"
+forecast-lab-hier = "forecast_lab.cli_hier:main"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

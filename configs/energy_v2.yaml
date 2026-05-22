@@ -1,0 +1,4 @@
+parallel:
+  enabled: true
+  backend: process
+  n_workers: 8
