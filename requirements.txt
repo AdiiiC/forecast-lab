@@ -29,7 +29,7 @@ ruptures>=1.1
 
 # ─── Optional: zero-shot foundation models (Milestone 2) ─────────────────
 chronos-forecasting>=1.4
-timesfm==1.0 # only timesfm 1.0.0 is currently available on PyPI; install manually if needed
+#timesfm==1.0 # only timesfm 1.0.0 is currently available on PyPI; install manually if needed
 
 # ─── Optional: MLOps / serving / pipelines (Milestone 6) ─────────────────
 fastapi>=0.110
