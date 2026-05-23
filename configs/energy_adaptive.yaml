@@ -13,8 +13,13 @@ backtest:
 
 intervals:
   alpha: 0.1
-  conformal: false        # we build wrappers explicitly below
+  conformal: false            # we build wrappers explicitly below
   calibration_size: 336
+
+parallel:
+  enabled: true
+  backend: process
+  n_workers: 8
 
 models:
   - {name: seasonal_naive}
@@ -23,6 +28,8 @@ models:
   - name: lightgbm
     lags: [1, 24, 168, 336]
     n_estimators: 600
+    learning_rate: 0.05
+    num_leaves: 64
 
   # ACI-wrapped ARIMA — adapts interval width online
   - name: aci
@@ -42,6 +49,20 @@ models:
       name: prophet
       weekly: true
       daily: true
+
+  # Static conformal-wrapped N-BEATS (for comparison)
+  - name: conformal
+    calibration_size: 336
+    horizon: 24
+    base:
+      name: nbeats
+      input_size: 168
+      hidden: 256
+      stacks: 3
+      blocks: 3
+      epochs: 30
+      batch_size: 256
+      dropout: 0.1
 
 output_dir: runs/energy_adaptive
 seed: 7

@@ -1,9 +1,7 @@
 """Compact Temporal Fusion Transformer with quantile output head.
 
-This is a faithful but lean re-implementation: variable-selection is collapsed to
-a single past-target stream (no covariates yet — those land in Milestone 2),
-gated residual networks remain, multi-head attention is included, and the
-output is a horizon × K quantile tensor trained with pinball loss.
+Gated residual networks + multi-head attention + horizon × K quantile tensor
+trained with pinball loss.
 """
 from __future__ import annotations
 import numpy as np
@@ -42,7 +40,6 @@ class _TFTNet(nn.Module):
         self.head  = nn.Linear(d, horizon * len(q_levels))
 
     def forward(self, x):
-        # x: (B, context, 1)
         z = self.embed(x)
         z, _ = self.lstm(z)
         z = self.grn1(z)
@@ -56,7 +53,7 @@ class _TFTNet(nn.Module):
 def _pinball(y, q_hat, q_levels):
     # y: (B, H), q_hat: (B, H, K)
     y = y.unsqueeze(-1)
-    q = torch.tensor(q_levels, device=y.device).view(1, 1, -1)
+    q = torch.tensor(q_levels, dtype=torch.float32, device=y.device).view(1, 1, -1)
     diff = y - q_hat
     return torch.mean(torch.maximum(q * diff, (q - 1) * diff))
 
@@ -65,6 +62,7 @@ class TFTModel(BaseModel):
     name = "tft"
     produces_intervals = True
     produces_distribution = True
+    accepts_covariates = False
 
     def __init__(self, context: int = 168, horizon_max: int = 24,
                  d_model: int = 64, heads: int = 4, dropout: float = 0.1,
@@ -83,10 +81,10 @@ class TFTModel(BaseModel):
         Y = np.lib.stride_tricks.sliding_window_view(y[L:], horizon)[:n].astype(np.float32)
         return X[..., None], Y
 
-    def fit(self, y: pd.Series):
+    def fit(self, y: pd.Series, cov=None):
         self.y_ = y.copy()
         self.mu0_, self.sd0_ = float(y.mean()), float(y.std() + 1e-8)
-        return self  # network built lazily once horizon is known
+        return self
 
     def _train(self, horizon: int):
         ys = (self.y_.values - self.mu0_) / self.sd0_
@@ -102,21 +100,30 @@ class TFTModel(BaseModel):
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 qhat = net(xb)
                 loss = _pinball(yb, qhat, self.q_levels)
-                opt.zero_grad(); loss.backward(); opt.step()
-        self.net_ = net; self.horizon_ = horizon
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+        self.net_ = net
+        self.horizon_ = horizon
 
-    @torch.no_grad()
-    def predict(self, horizon: int, alpha: float = 0.1) -> Forecast:
+    def predict(self, horizon: int, alpha: float = 0.1, cov=None) -> Forecast:
+        # Train lazily (must happen OUTSIDE no_grad)
         if not hasattr(self, "net_") or self.horizon_ != horizon:
             self._train(horizon)
+
+        # Inference only — gradients disabled here
         ys = (self.y_.values - self.mu0_) / self.sd0_
-        x = torch.from_numpy(ys[-self.context:].astype(np.float32))[None, :, None].to(self.device)
+        x = torch.from_numpy(
+            ys[-self.context:].astype(np.float32)
+        )[None, :, None].to(self.device)
+
         self.net_.eval()
-        q_hat = self.net_(x).cpu().numpy()[0]            # (H, K)
+        with torch.no_grad():
+            q_hat = self.net_(x).cpu().numpy()[0]   # (H, K)
+
         q_hat = q_hat * self.sd0_ + self.mu0_
         q_levels = np.array(self.q_levels)
         dist = Quantile(q_levels=q_levels, q_values=q_hat)
-        # use median as point forecast for robustness
         mean = q_hat[:, np.argmin(np.abs(q_levels - 0.5))]
         lo = q_hat[:, np.argmin(np.abs(q_levels - alpha / 2))]
         hi = q_hat[:, np.argmin(np.abs(q_levels - (1 - alpha / 2)))]

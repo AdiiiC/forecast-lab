@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -53,8 +54,15 @@ class _NullRun:
 
 class _MLflowRun:
     def __init__(self, r): self.r = r
-    def log_metric(self, k, v, step=None):  mlflow.log_metric(k, float(v), step=step)
+    def log_metric(self, k, v, step=None):
+        safe_key = re.sub(r"[^a-zA-Z0-9_.\-/ ]", "_", k)
+        mlflow.log_metric(safe_key, float(v), step=step)
     def log_metrics(self, d: dict[str, Any], step=None):
-        mlflow.log_metrics({k: float(v) for k, v in d.items() if v is not None}, step=step)
+        safe_metrics = {
+            re.sub(r"[^a-zA-Z0-9_.\-/ ]", "_", k): float(v)
+            for k, v in d.items()
+            if v is not None
+        }
+        mlflow.log_metrics(safe_metrics, step=step)
     def log_artifact(self, path):     mlflow.log_artifact(str(path))
     def log_dict(self, d, name):      mlflow.log_dict(d, name)

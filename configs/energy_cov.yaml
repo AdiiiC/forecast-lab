@@ -16,6 +16,11 @@ intervals:
   conformal: true
   calibration_size: 336
 
+parallel:
+  enabled: true
+  backend: process
+  n_workers: 8
+
 models:
   - {name: seasonal_naive}
 
@@ -24,16 +29,21 @@ models:
     n_estimators: 800
     learning_rate: 0.05
     num_leaves: 64
-    country: US        # holidays
+    country: US
     observed_lags: [1, 24, 168]
 
-  - {name: tft,     context: 168, d_model: 64,  heads: 4, epochs: 30}
-  - {name: patchtst, context: 336, patch_len: 16, stride: 8, d_model: 128,
-     heads: 8, layers: 3, epochs: 30}
-  - {name: tide,    context: 336, hidden: 256, layers: 2, epochs: 40, country: US}
-  - {name: deepar,  context: 168, hidden: 64,  layers: 2, epochs: 20, dist: studentt}
+  - {name: tft, context: 168, d_model: 64, heads: 4, epochs: 30, batch_size: 128}
 
-  # Zero-shot foundation model — installs are optional
+  - {name: patchtst, context: 336, patch_len: 16, stride: 8, d_model: 128,
+     heads: 8, layers: 3, epochs: 30, batch_size: 128}
+
+  - {name: tide, context: 336, hidden: 256, layers: 2, epochs: 40,
+     batch_size: 128, country: US}
+
+  - {name: deepar, context: 168, hidden: 64, layers: 2, epochs: 20,
+     dist: studentt, batch_size: 128, n_samples: 200}
+
+  # Zero-shot foundation model — pip install chronos-forecasting to enable
   - {name: chronos, model_id: amazon/chronos-t5-small, num_samples: 200}
 
 output_dir: runs/energy_cov
