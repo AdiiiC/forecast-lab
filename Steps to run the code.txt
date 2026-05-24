@@ -1,0 +1,45 @@
+Steps to run the code:
+cd "D:\adi project\forecast-lab"
+
+.\.venv\Scripts\Activate.ps1 (if you are using venv)
+
+$env:PYTHONPATH="src"
+
+pip install -r requirements.txt
+pip install -e .
+
+python -m forecast_lab.cli --config configs/energy.yaml
+
+python -m forecast_lab.cli --config configs/energy_v2.yaml --tune --track
+
+$env:PYTHONPATH="src"
+python -m forecast_lab.cli --config configs/energy_adaptive.yaml --track
+
+$env:PYTHONPATH="src"
+python -m forecast_lab.cli --config configs/energy_cov.yaml --track
+
+$env:PYTHONPATH="src"
+python -m forecast_lab.cli --config configs/intermittent.yaml --track
+
+$env:PYTHONPATH="src"
+python -m forecast_lab.cli_hier --config configs/retail_hier.yaml --track (in separate CLI/Terminal)
+
+mlflow server `
+>>   --backend-store-uri sqlite:///mlflow.db `
+>>   --default-artifact-root ./mlruns `
+>>   --host 127.0.0.1 `
+>>   --port 5000 (After Step 7 starts running)
+Open: http://localhost:5000
+
+pip install streamlit
+streamlit run dashboard/app.py
+
+pip install fastapi "uvicorn[standard]" gunicorn
+$env:PYTHONPATH="src"
+uvicorn forecast_lab.serving.app:app --host 0.0.0.0 --port 8000
+Test sequence for above:
+curl -X POST http://localhost:8000/forecast `
+  -H "content-type: application/json" `
+  -d "{\"history\": [1,2,3,4,5], \"horizon\": 24, \"alpha\": 0.1}"
+
+ 
