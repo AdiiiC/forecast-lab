@@ -18,11 +18,13 @@ from .covariates import Covariates
 
 
 _DL_MODELS = {"nbeats", "deepar", "tft", "patchtst", "tide", "chronos"}
+_STATSMODELS_MODELS = {"arima", "prophet", "aci", "enbpi"}  # Statsmodels memory-intensive; avoid process fork
 
 
 def _safe_backend(model_name: str, requested: str) -> str:
     if requested in ("serial", "thread"):    return requested
     if model_name in _DL_MODELS:             return "thread"   # CUDA + fork is unsafe
+    if model_name in _STATSMODELS_MODELS:    return "thread"   # Statsmodels Kalman smoother memory-intensive
     return requested
 
 

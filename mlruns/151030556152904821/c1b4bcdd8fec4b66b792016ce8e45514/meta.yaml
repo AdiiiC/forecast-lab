@@ -1,0 +1,14 @@
+artifact_uri: file:D:/adi project/forecast-lab/mlruns/151030556152904821/c1b4bcdd8fec4b66b792016ce8e45514/artifacts
+end_time: 1781243574715
+entry_point_name: ''
+experiment_id: '151030556152904821'
+lifecycle_stage: active
+run_id: c1b4bcdd8fec4b66b792016ce8e45514
+run_name: f9dfc0a23c4f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1781243002191
+status: 4
+tags: []
+user_id: Adithya

@@ -44,22 +44,34 @@ class ChronosModel(BaseModel):
         return "chronos-bolt" in self.model_id
 
     def _load(self):
-        try:
-            if self._is_chronos2():
-                from chronos import Chronos2Pipeline  # type: ignore
-                self.pipe_ = Chronos2Pipeline.from_pretrained(
-                    self.model_id, device_map=self.device)
-                self.kind_ = "chronos2"
-            else:
-                from chronos import ChronosPipeline  # type: ignore
-                self.pipe_ = ChronosPipeline.from_pretrained(
-                    self.model_id, device_map=self.device)
-                self.kind_ = "bolt" if self._is_bolt() else "t5"
-        except Exception as e:
-            raise RuntimeError(
-                "Install chronos-forecasting>=2.2: "
-                "`pip install chronos-forecasting`. "
-                f"Underlying error: {e}")
+        # Try loading onto the requested device; if that fails (e.g. due to
+        # meta-tensor/device dispatch errors from transformers/accelerate),
+        # retry on CPU to provide a safe fallback.
+        last_err = None
+        for target_device in (self.device, "cpu"):
+            try:
+                if self._is_chronos2():
+                    from chronos import Chronos2Pipeline  # type: ignore
+                    self.pipe_ = Chronos2Pipeline.from_pretrained(
+                        self.model_id, device_map=target_device)
+                    self.kind_ = "chronos2"
+                else:
+                    from chronos import ChronosPipeline  # type: ignore
+                    self.pipe_ = ChronosPipeline.from_pretrained(
+                        self.model_id, device_map=target_device)
+                    self.kind_ = "bolt" if self._is_bolt() else "t5"
+                # Record the actual device used
+                self.device = target_device
+                return
+            except Exception as e:
+                last_err = e
+                # If already tried CPU, break and raise below
+                if target_device == "cpu":
+                    break
+                # Otherwise, log and retry with CPU
+        raise RuntimeError(
+            "Install chronos-forecasting>=2.2: `pip install chronos-forecasting`. "
+            f"Failed to load Chronos model '{self.model_id}'. Last error: {last_err}")
 
     def fit(self, y: pd.Series, cov=None):
         self.y_ = y.copy()
@@ -163,7 +175,7 @@ class ChronosModel(BaseModel):
 
         # T5 models return sample trajectories: (1, S, H)
         samples = self.pipe_.predict(
-            context=ctx,
+            ctx,
             prediction_length=horizon,
             num_samples=self.num_samples,
         ).cpu().numpy()[0].T          # → (H, S)
@@ -173,4 +185,4 @@ class ChronosModel(BaseModel):
         return Forecast(
             mean=dist.mean(), lo=lo, hi=hi,
             samples=samples, dist=dist,
-        )
+        ) 

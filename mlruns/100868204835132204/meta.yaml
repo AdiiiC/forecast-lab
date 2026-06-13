@@ -1,0 +1,8 @@
+artifact_location: file:D:/adi project/forecast-lab/mlruns/100868204835132204
+creation_time: 1781242275707
+experiment_id: '100868204835132204'
+last_update_time: 1781242275707
+lifecycle_stage: active
+name: forecast-lab-hier
+trace_location: null
+workspace: default

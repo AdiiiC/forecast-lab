@@ -1,0 +1,1 @@
+[{"name": "seasonal_naive"}, {"name": "croston", "alpha": 0.1, "variant": "sba"}, {"name": "tsb", "alpha_p": 0.1, "alpha_z": 0.1}, {"name": "adida", "agg": 24, "alpha": 0.2}, {"name": "lightgbm", "lags": [1, 24, 168], "n_estimators": 400, "learning_rate": 0.05, "num_leaves": 32}]
