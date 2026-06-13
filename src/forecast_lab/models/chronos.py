@@ -43,10 +43,16 @@ class ChronosModel(BaseModel):
         import torch
         try:
             from chronos import ChronosPipeline  # type: ignore
+            # Passing device_map="cpu" triggers accelerate's dispatch_model
+            # which uses meta tensors and then calls model.to(device) — broken
+            # for CPU on some transformers/accelerate combinations.
+            # Skip device_map on CPU; the model loads to CPU by default.
+            load_kwargs: dict = {"dtype": torch.float32}
+            if self.device != "cpu":
+                load_kwargs["device_map"] = self.device
             self.pipe_ = ChronosPipeline.from_pretrained(
                 self.model_id,
-                device_map=self.device,
-                torch_dtype=torch.float32,
+                **load_kwargs,
             )
             self.kind_ = "bolt" if self._is_bolt() else "t5"
         except Exception as e:

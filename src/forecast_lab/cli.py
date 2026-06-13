@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 import json
+import pickle
 import random
 from pathlib import Path
 import numpy as np
@@ -35,6 +36,10 @@ def main():
                     help="Run Optuna HPO for models whose spec includes `search`.")
     ap.add_argument("--track", action="store_true", help="Log to MLflow.")
     ap.add_argument("--experiment", default="forecast-lab")
+    ap.add_argument("--no-cache", action="store_true",
+                    help="Ignore cached fold results and re-run all models.")
+    ap.add_argument("--only", nargs="+", metavar="MODEL",
+                    help="Run only these model names (others load from cache if available).")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text())
@@ -71,6 +76,11 @@ def main():
     par = cfg.get("parallel", {})
     results: dict = {}
 
+    out = Path(cfg["output_dir"])
+    out.mkdir(parents=True, exist_ok=True)
+    cache_dir = out / ".cache"
+    cache_dir.mkdir(exist_ok=True)
+
     with tracking_run(args.experiment, run_name=repro_hash(cfg),
                       cfg=cfg, enabled=args.track) as mlrun:
 
@@ -94,6 +104,19 @@ def main():
                                          calibration_size=iv["calibration_size"],
                                          horizon=bt["horizon"])
 
+            cache_file = cache_dir / f"{model.name}.pkl"
+            only_filter = args.only
+            skip_run = (
+                not args.no_cache
+                and (only_filter is None or model.name not in only_filter)
+                and cache_file.exists()
+            )
+            if skip_run:
+                with open(cache_file, "rb") as fh:
+                    results[model.name] = pickle.load(fh)
+                console.print(f"[bold green]→[/] [cyan]{model.name}[/] [dim](loaded from cache)[/]")
+                continue
+
             console.print(f"[bold green]→[/] running [cyan]{model.name}[/]")
 
             # Parallel walk-forward if enabled (Milestone 6), else serial
@@ -116,12 +139,14 @@ def main():
                     mode=bt["mode"], alpha=iv["alpha"], desc=model.name,
                 )
 
+            # Checkpoint this model's folds so a re-run can skip it
+            with open(cache_file, "wb") as fh:
+                pickle.dump(results[model.name], fh)
+
         # ─── Aggregate + report ────────────────────────────────────────────
         df = aggregate(results, season=season, alpha=iv["alpha"])
         print_table(df, alpha=iv["alpha"])
 
-        out = Path(cfg["output_dir"])
-        out.mkdir(parents=True, exist_ok=True)
         df.to_csv(out / "metrics.csv")
         plot_folds(results, out / "plots", alpha=iv["alpha"])
         plot_diagnostics(results, out / "diagnostics")
