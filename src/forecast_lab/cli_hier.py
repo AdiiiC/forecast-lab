@@ -1,5 +1,6 @@
 from __future__ import annotations
-import argparse, random
+import argparse
+import random
 from pathlib import Path
 import numpy as np
 import yaml
@@ -12,10 +13,13 @@ from .tracking import run as tracking_run, repro_hash
 
 
 def set_seed(s):
-    random.seed(s); np.random.seed(s)
+    random.seed(s)
+    np.random.seed(s)
     try:
-        import torch; torch.manual_seed(s)
-    except Exception: pass
+        import torch
+        torch.manual_seed(s)
+    except Exception:
+        pass
 
 
 def main():
@@ -69,7 +73,8 @@ def main():
                             for v in row.values])
             console.print(t)
 
-        out = Path(cfg["output_dir"]); out.mkdir(parents=True, exist_ok=True)
+        out = Path(cfg["output_dir"])
+        out.mkdir(parents=True, exist_ok=True)
         for method, df in all_reports.items():
             df.to_csv(out / f"recon_{method}.csv", index=False)
         console.print(f"\n[dim]artifacts → {out}[/]")

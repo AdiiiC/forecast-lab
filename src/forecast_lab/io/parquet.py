@@ -4,7 +4,8 @@ import pandas as pd
 
 class ParquetConnector:
     def __init__(self, path: str, partition_cols: list[str] | None = None):
-        self.path = Path(path); self.partition_cols = partition_cols
+        self.path = Path(path)
+        self.partition_cols = partition_cols
 
     def read(self, *, where: dict | None = None) -> pd.DataFrame:
         df = pd.read_parquet(self.path)
@@ -16,7 +17,8 @@ class ParquetConnector:
     def write(self, df: pd.DataFrame, mode: str = "append") -> None:
         if mode == "overwrite" and self.path.exists():
             if self.path.is_dir():
-                import shutil; shutil.rmtree(self.path)
+                import shutil
+                shutil.rmtree(self.path)
             else:
                 self.path.unlink()
         df.to_parquet(self.path, partition_cols=self.partition_cols)

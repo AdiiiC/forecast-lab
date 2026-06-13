@@ -31,7 +31,9 @@ class LightGBMModel(BaseModel):
         p = dict(self.params, objective=objective)
         if alpha is not None:
             p["alpha"] = alpha
-        m = lgb.LGBMRegressor(**p); m.fit(X, y); return m
+        m = lgb.LGBMRegressor(**p)
+        m.fit(X, y)
+        return m
 
     def fit(self, y: pd.Series, cov: Covariates | None = None):
         self.y_ = y.copy()
@@ -65,6 +67,8 @@ class LightGBMModel(BaseModel):
             mu = float(self.mean_.predict(X_next)[0])
             lo = float(self.qlo_.predict(X_next)[0])
             hi = float(self.qhi_.predict(X_next)[0])
-            means.append(mu); los.append(lo); his.append(hi)
+            means.append(mu)
+            los.append(lo)
+            his.append(hi)
             history = pd.concat([history, pd.Series([mu], index=idx)])
         return Forecast(np.array(means), np.array(los), np.array(his))

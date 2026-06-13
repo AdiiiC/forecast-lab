@@ -14,7 +14,6 @@ from __future__ import annotations
 import os
 import pickle
 from typing import List
-import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -53,7 +52,8 @@ def _startup():
     global _MODEL, _MODEL_NAME
     uri = os.environ.get("FL_MODEL_URI")
     if uri:
-        _MODEL = _load(uri); _MODEL_NAME = uri
+        _MODEL = _load(uri)
+        _MODEL_NAME = uri
 
 
 @app.get("/health")
@@ -83,6 +83,8 @@ def forecast(req: ForecastRequest):
 def reload(payload: dict):
     global _MODEL, _MODEL_NAME
     uri = payload.get("model_uri")
-    if not uri: raise HTTPException(400, "model_uri required")
-    _MODEL = _load(uri); _MODEL_NAME = uri
+    if not uri:
+        raise HTTPException(400, "model_uri required")
+    _MODEL = _load(uri)
+    _MODEL_NAME = uri
     return {"status": "loaded", "model": _MODEL_NAME}

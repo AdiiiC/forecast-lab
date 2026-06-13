@@ -14,7 +14,7 @@ from .metrics import (
 )
 from .metrics_prob import crps_sample, energy_score, quantile_loss_mean
 from .stats_tests import diebold_mariano
-from .calibration import plot_diagnostics, reliability
+from .calibration import plot_diagnostics
 from .backtest import FoldResult
 
 
@@ -82,7 +82,9 @@ def aggregate(results: dict[str, list[FoldResult]], season: int,
         pvals, stars = [], []
         for name in df.index:
             if name == baseline:
-                pvals.append(np.nan); stars.append("—"); continue
+                pvals.append(np.nan)
+                stars.append("—")
+                continue
             yp = np.concatenate([f.y_pred for f in results[name]])
             dm = diebold_mariano(y_true, yp, base_pred, h=1, loss="mae")
             pvals.append(dm.p_value)
@@ -135,7 +137,8 @@ def plot_folds(results: dict, out: Path, alpha: float):
             ax.fill_between(x, f.lo, f.hi, alpha=0.2,
                             label=f"{int((1-alpha)*100)}% PI")
         ax.set_title(f"{name} — last fold")
-        ax.set_xlabel("horizon step"); ax.legend(loc="best")
+        ax.set_xlabel("horizon step")
+        ax.legend(loc="best")
         fig.tight_layout()
         fig.savefig(out / f"{name}.png", dpi=130)
         plt.close(fig)

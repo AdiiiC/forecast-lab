@@ -18,10 +18,12 @@ from .calibration import plot_diagnostics
 
 
 def set_seed(s: int):
-    random.seed(s); np.random.seed(s)
+    random.seed(s)
+    np.random.seed(s)
     try:
         import torch
-        torch.manual_seed(s); torch.cuda.manual_seed_all(s)
+        torch.manual_seed(s)
+        torch.cuda.manual_seed_all(s)
     except Exception:
         pass
 
@@ -118,7 +120,8 @@ def main():
         df = aggregate(results, season=season, alpha=iv["alpha"])
         print_table(df, alpha=iv["alpha"])
 
-        out = Path(cfg["output_dir"]); out.mkdir(parents=True, exist_ok=True)
+        out = Path(cfg["output_dir"])
+        out.mkdir(parents=True, exist_ok=True)
         df.to_csv(out / "metrics.csv")
         plot_folds(results, out / "plots", alpha=iv["alpha"])
         plot_diagnostics(results, out / "diagnostics")

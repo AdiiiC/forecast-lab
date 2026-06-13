@@ -15,8 +15,10 @@ class DMResult:
 
 
 def _loss(e: np.ndarray, kind: str):
-    if kind == "mse":  return e ** 2
-    if kind == "mae":  return np.abs(e)
+    if kind == "mse":
+        return e ** 2
+    if kind == "mae":
+        return np.abs(e)
     raise ValueError(kind)
 
 

@@ -10,8 +10,6 @@ where y_all stacks rows in a canonical order: [top, level-1 groups..., bottom].
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from itertools import product
-from typing import Iterable
 import numpy as np
 import pandas as pd
 
@@ -48,7 +46,8 @@ class Hierarchy:
             for k in bottom_keys:
                 p = k[:L]
                 if p not in seen:
-                    seen.add(p); nodes.append(p)
+                    seen.add(p)
+                    nodes.append(p)
         # bottom rows last
         nodes.extend(bottom_keys)
 

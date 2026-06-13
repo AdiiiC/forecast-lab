@@ -47,7 +47,6 @@ def _shrink_cov(E: np.ndarray) -> np.ndarray:
     n, _ = E.shape
     s = np.cov(E, rowvar=False)
     d = np.diag(np.diag(s))
-    var_s = np.var(E, axis=0)
     # shrinkage intensity λ* (clamped to [0,1])
     num = ((E - E.mean(0)).T ** 2) @ ((E - E.mean(0)) ** 2) / n - s ** 2
     den = (s - d) ** 2

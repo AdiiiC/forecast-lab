@@ -16,8 +16,10 @@ from .base import BaseModel, Forecast
 class _GRN(nn.Module):
     def __init__(self, d, dropout=0.1):
         super().__init__()
-        self.fc1 = nn.Linear(d, d); self.fc2 = nn.Linear(d, d)
-        self.gate = nn.Linear(d, d); self.drop = nn.Dropout(dropout)
+        self.fc1 = nn.Linear(d, d)
+        self.fc2 = nn.Linear(d, d)
+        self.gate = nn.Linear(d, d)
+        self.drop = nn.Dropout(dropout)
         self.norm = nn.LayerNorm(d)
 
     def forward(self, x):

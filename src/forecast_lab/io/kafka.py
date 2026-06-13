@@ -19,7 +19,8 @@ class KafkaConnector:
         recs = []
         for i, msg in enumerate(self.consumer):
             recs.append(msg.value)
-            if i + 1 >= max_records: break
+            if i + 1 >= max_records:
+                break
         return pd.DataFrame(recs)
 
     def write(self, df: pd.DataFrame, mode: str = "append") -> None:

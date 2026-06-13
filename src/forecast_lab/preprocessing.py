@@ -30,10 +30,12 @@ def fill_kalman(y: pd.Series) -> pd.Series:
 def fill_seasonal(y: pd.Series, season: int) -> pd.Series:
     """Replace NaNs with the value `season` steps prior; bfill any leftovers."""
     out = y.copy()
-    if not out.isna().any(): return out
+    if not out.isna().any():
+        return out
     for _ in range(3):
         out = out.fillna(out.shift(season))
-        if not out.isna().any(): break
+        if not out.isna().any():
+            break
     return out.interpolate().bfill().ffill()
 
 
@@ -111,8 +113,6 @@ def preprocess(y: pd.Series, *, season: int,
     flags[f.name] = f
     cps = detect_changepoints(y2, min_size=season) if find_changepoints else []
     flags["since_changepoint"] = 0
-    last = y2.index[0]
     for cp in cps:
         flags.loc[cp:, "since_changepoint"] = (flags.loc[cp:].index - cp).days
-        last = cp
     return y2, flags, PreprocessReport(n_missing, int(f.sum()), cps)

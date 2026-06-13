@@ -22,8 +22,10 @@ def pit_from_quantiles(y: np.ndarray, quantiles: np.ndarray,
     for i, yi in enumerate(y):
         v = quantiles[i]
         # invert by linear interpolation in (v, q_levels)
-        if yi <= v[0]:   out[i] = q_levels[0] / 2
-        elif yi >= v[-1]: out[i] = (1 + q_levels[-1]) / 2
+        if yi <= v[0]:
+            out[i] = q_levels[0] / 2
+        elif yi >= v[-1]:
+            out[i] = (1 + q_levels[-1]) / 2
         else:
             out[i] = np.interp(yi, v, q_levels)
     return out
@@ -51,7 +53,8 @@ def plot_diagnostics(results: dict, out: Path):
     # PIT histograms (only models with samples or quantiles)
     fig, axes = plt.subplots(1, max(1, len(results)),
                              figsize=(3.2 * max(1, len(results)), 3))
-    if len(results) == 1: axes = [axes]
+    if len(results) == 1:
+        axes = [axes]
     for ax, (name, folds) in zip(axes, results.items()):
         y_true = np.concatenate([f.y_true for f in folds])
         if all(f.samples is not None for f in folds):
@@ -61,26 +64,34 @@ def plot_diagnostics(results: dict, out: Path):
             q = np.concatenate([f.quantiles for f in folds], axis=0)
             pit = pit_from_quantiles(y_true, q, folds[0].q_levels)
         else:
-            ax.set_visible(False); continue
+            ax.set_visible(False)
+            continue
         ax.hist(pit, bins=20, range=(0, 1), color="steelblue", edgecolor="white")
         ax.axhline(len(pit) / 20, color="black", ls="--", lw=1)
-        ax.set_title(f"PIT — {name}"); ax.set_xlabel("PIT"); ax.set_xlim(0, 1)
-    fig.tight_layout(); fig.savefig(out / "pit_histograms.png", dpi=130)
+        ax.set_title(f"PIT — {name}")
+        ax.set_xlabel("PIT")
+        ax.set_xlim(0, 1)
+    fig.tight_layout()
+    fig.savefig(out / "pit_histograms.png", dpi=130)
     plt.close(fig)
 
     # Sharpness vs coverage scatter
     fig, ax = plt.subplots(figsize=(5, 4))
     for name, folds in results.items():
-        if not all(np.isfinite(f.lo).all() for f in folds): continue
+        if not all(np.isfinite(f.lo).all() for f in folds):
+            continue
         y_true = np.concatenate([f.y_true for f in folds])
         lo = np.concatenate([f.lo for f in folds])
         hi = np.concatenate([f.hi for f in folds])
         cov = float(np.mean((y_true >= lo) & (y_true <= hi)))
         width = float(np.mean(hi - lo))
-        ax.scatter(cov, width, s=60); ax.annotate(name, (cov, width),
-                                                  textcoords="offset points",
-                                                  xytext=(5, 5), fontsize=9)
-    ax.set_xlabel("empirical coverage"); ax.set_ylabel("mean PI width")
+        ax.scatter(cov, width, s=60)
+        ax.annotate(name, (cov, width),
+                    textcoords="offset points",
+                    xytext=(5, 5), fontsize=9)
+    ax.set_xlabel("empirical coverage")
+    ax.set_ylabel("mean PI width")
     ax.set_title("sharpness vs. coverage (lower-right is better)")
-    fig.tight_layout(); fig.savefig(out / "sharpness_coverage.png", dpi=130)
+    fig.tight_layout()
+    fig.savefig(out / "sharpness_coverage.png", dpi=130)
     plt.close(fig)

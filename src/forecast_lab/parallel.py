@@ -8,7 +8,6 @@ from __future__ import annotations
 import copy
 import os
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from typing import Callable, Iterable
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -22,9 +21,12 @@ _STATSMODELS_MODELS = {"arima", "prophet", "aci", "enbpi"}  # Statsmodels memory
 
 
 def _safe_backend(model_name: str, requested: str) -> str:
-    if requested in ("serial", "thread"):    return requested
-    if model_name in _DL_MODELS:             return "thread"   # CUDA + fork is unsafe
-    if model_name in _STATSMODELS_MODELS:    return "thread"   # Statsmodels Kalman smoother memory-intensive
+    if requested in ("serial", "thread"):
+        return requested
+    if model_name in _DL_MODELS:
+        return "thread"   # CUDA + fork is unsafe
+    if model_name in _STATSMODELS_MODELS:
+        return "thread"   # Statsmodels Kalman smoother memory-intensive
     return requested
 
 
@@ -60,7 +62,8 @@ def parallel_backtest(model, y: pd.Series, *, horizon, n_folds, min_train_size,
     jobs = []
     for i, (te, ee) in enumerate(splits):
         tr_lo = 0 if mode == "expanding" else max(0, te - min_train_size)
-        train = y.iloc[tr_lo:te]; test = y.iloc[te:ee]
+        train = y.iloc[tr_lo:te]
+        test = y.iloc[te:ee]
         tc = cov.slice(train.index[0], train.index[-1]) if cov.has_any else None
         sc = cov.slice(test.index[0],  test.index[-1])  if cov.has_any else None
         jobs.append((model, train, test, tc, sc, horizon, alpha, i))
@@ -72,7 +75,8 @@ def parallel_backtest(model, y: pd.Series, *, horizon, n_folds, min_train_size,
         return [_run_fold(j) for j in tqdm(jobs, desc=desc, leave=False)]
     if backend == "ray":
         import ray
-        if not ray.is_initialized(): ray.init(ignore_reinit_error=True)
+        if not ray.is_initialized():
+            ray.init(ignore_reinit_error=True)
         remote = ray.remote(_run_fold)
         return ray.get([remote.remote(j) for j in jobs])
     if backend == "joblib":
@@ -84,5 +88,6 @@ def parallel_backtest(model, y: pd.Series, *, horizon, n_folds, min_train_size,
         out = [None] * len(jobs)
         for f in tqdm(as_completed(futures), total=len(futures),
                       desc=desc, leave=False):
-            r = f.result(); out[r.fold] = r
+            r = f.result()
+            out[r.fold] = r
         return out

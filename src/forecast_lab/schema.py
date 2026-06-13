@@ -20,7 +20,8 @@ def validate(df: pd.DataFrame, spec: dict[str, Any]) -> SchemaResult:
     errors: list[str] = []
     for col, rules in spec.items():
         if col not in df.columns:
-            errors.append(f"missing column: {col}"); continue
+            errors.append(f"missing column: {col}")
+            continue
         s = df[col]
         if "dtype" in rules and str(s.dtype) != rules["dtype"]:
             errors.append(f"{col}: dtype {s.dtype} != {rules['dtype']}")
@@ -41,21 +42,26 @@ def psi(ref: np.ndarray, cur: np.ndarray, bins: int = 10) -> float:
     """Population Stability Index. >0.1 = mild, >0.25 = serious drift."""
     qs = np.quantile(ref, np.linspace(0, 1, bins + 1))
     qs[0], qs[-1] = -np.inf, np.inf
-    r, _ = np.histogram(ref, bins=qs); c, _ = np.histogram(cur, bins=qs)
-    r = r / max(r.sum(), 1); c = c / max(c.sum(), 1)
-    r = np.where(r == 0, 1e-6, r); c = np.where(c == 0, 1e-6, c)
+    r, _ = np.histogram(ref, bins=qs)
+    c, _ = np.histogram(cur, bins=qs)
+    r = r / max(r.sum(), 1)
+    c = c / max(c.sum(), 1)
+    r = np.where(r == 0, 1e-6, r)
+    c = np.where(c == 0, 1e-6, c)
     return float(np.sum((c - r) * np.log(c / r)))
 
 
 def ks_test(ref: np.ndarray, cur: np.ndarray) -> tuple[float, float]:
     from scipy.stats import ks_2samp
-    s = ks_2samp(ref, cur); return float(s.statistic), float(s.pvalue)
+    s = ks_2samp(ref, cur)
+    return float(s.statistic), float(s.pvalue)
 
 
 def drift_report(ref: pd.DataFrame, cur: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for c in ref.columns.intersection(cur.columns):
-        if not np.issubdtype(ref[c].dtype, np.number): continue
+        if not np.issubdtype(ref[c].dtype, np.number):
+            continue
         p = psi(ref[c].dropna().values, cur[c].dropna().values)
         k, pv = ks_test(ref[c].dropna().values, cur[c].dropna().values)
         rows.append(dict(feature=c, PSI=p, KS=k, KS_p=pv,

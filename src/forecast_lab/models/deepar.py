@@ -79,7 +79,9 @@ class DeepARModel(BaseModel):
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 mu, sigma, nu, _ = self.net_(xb)
                 loss = _nll(yb, mu, sigma, nu, self.dist).mean()
-                opt.zero_grad(); loss.backward(); opt.step()
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
         return self
 
     @torch.no_grad()

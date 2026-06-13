@@ -16,10 +16,12 @@ def quantile_loss_mean(y, quantiles: np.ndarray, q_levels: np.ndarray) -> float:
 
 def crps_sample(y: np.ndarray, samples: np.ndarray) -> float:
     """CRPS from samples (H, S). Uses the standard E|X-y| - 0.5 E|X-X'| identity."""
-    y = np.asarray(y); s = np.asarray(samples)
+    y = np.asarray(y)
+    s = np.asarray(samples)
     term1 = np.mean(np.abs(s - y[:, None]), axis=1)
     # E|X - X'| via sorted-sample shortcut: O(S log S) per horizon
-    s_sorted = np.sort(s, axis=1); S = s.shape[1]
+    s_sorted = np.sort(s, axis=1)
+    S = s.shape[1]
     weights = (2 * np.arange(1, S + 1) - S - 1)
     term2 = (weights * s_sorted).sum(axis=1) / (S * S)
     return float(np.mean(term1 - 0.5 * term2))

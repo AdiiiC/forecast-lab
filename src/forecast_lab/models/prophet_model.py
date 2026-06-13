@@ -1,7 +1,6 @@
 """Prophet wrapper with native posterior-sample prediction intervals."""
 from __future__ import annotations
 import logging
-import numpy as np
 import pandas as pd
 from .base import BaseModel, Forecast
 
