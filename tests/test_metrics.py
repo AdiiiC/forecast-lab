@@ -15,7 +15,7 @@ def test_mase_naive_is_one_ish():
 
 def test_coverage():
     y = np.array([1, 2, 3, 4])
-    lo = np.array([0, 1, 4, 3])
+    lo = np.array([0, 1, 2, 3])
     hi = np.array([2, 3, 5, 5])
     assert coverage(y, lo, hi) == 1.0
 
