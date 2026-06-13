@@ -43,11 +43,13 @@ class ChronosModel(BaseModel):
         import torch
         try:
             from chronos import ChronosPipeline  # type: ignore
-            # Passing device_map="cpu" triggers accelerate's dispatch_model
-            # which uses meta tensors and then calls model.to(device) — broken
-            # for CPU on some transformers/accelerate combinations.
-            # Skip device_map on CPU; the model loads to CPU by default.
-            load_kwargs: dict = {"dtype": torch.float32}
+            # low_cpu_mem_usage=False: disables meta-tensor initialisation which
+            # leaves generation_config special-token tensors on meta device,
+            # causing "Tensor.item() cannot be called on meta tensors" at
+            # inference time (transformers >=4.40 + chronos-t5 models).
+            # device_map on CPU also triggers accelerate's dispatch_model which
+            # has the same meta-tensor issue, so we skip it for CPU.
+            load_kwargs: dict = {"dtype": torch.float32, "low_cpu_mem_usage": False}
             if self.device != "cpu":
                 load_kwargs["device_map"] = self.device
             self.pipe_ = ChronosPipeline.from_pretrained(
