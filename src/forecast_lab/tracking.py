@@ -25,7 +25,7 @@ def run(experiment: str, run_name: str, cfg: dict, enabled: bool = True):
     if not (enabled and _HAS_MLFLOW):
         yield _NullRun()
         return
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI","sqlite:///mlflow.db"))
+    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
     mlflow.set_experiment(experiment)
     with mlflow.start_run(run_name=run_name) as r:
         mlflow.log_params({"_repro_hash": repro_hash(cfg)})
