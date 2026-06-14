@@ -72,14 +72,31 @@ def stl_outliers(y: pd.Series, period: int, k: float = 3.0
 
 # ─── Changepoints ───────────────────────────────────────────────────────────
 
-def detect_changepoints(y: pd.Series, min_size: int = 168, pen: float = 10.0
-                        ) -> list[pd.Timestamp]:
-    """Use `ruptures` if available; otherwise a simple CUSUM on rolling means."""
+def detect_changepoints(y: pd.Series, min_size: int = 168, pen: float = 3.0,
+                        max_n: int = 2000) -> list[pd.Timestamp]:
+    """Use `ruptures` if available; otherwise a simple CUSUM on rolling means.
+
+    ruptures RBF kernel is O(n²) — unusable on long series. We use the
+    'l2' (least-squares) model which is O(n log n) and safe on 17k+ points.
+    Long series are downsampled to `max_n` points before detection so the
+    algorithm stays fast; changepoints are then mapped back to original index.
+    """
     try:
         import ruptures as rpt
-        algo = rpt.Pelt(model="rbf", min_size=min_size).fit(y.values)
+        vals = y.values.astype(float)
+        n = len(vals)
+        if n > max_n:
+            # Downsample: average into max_n buckets
+            factor = n // max_n
+            trimmed = vals[:factor * max_n]
+            vals_ds = trimmed.reshape(-1, factor).mean(axis=1)
+            idx_ds = y.index[::factor][:len(vals_ds)]
+        else:
+            vals_ds = vals
+            idx_ds = y.index
+        algo = rpt.Pelt(model="l2", min_size=max(2, min_size // max(1, n // max_n))).fit(vals_ds)
         bks = algo.predict(pen=pen)
-        return [y.index[b - 1] for b in bks[:-1]]
+        return [idx_ds[b - 1] for b in bks[:-1]]
     except Exception:
         roll = y.rolling(min_size, min_periods=min_size).mean()
         diffs = roll.diff().abs()

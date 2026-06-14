@@ -1,0 +1,17 @@
+{
+  "name": "lightgbm",
+  "lags": [
+    1,
+    2,
+    3,
+    24,
+    25,
+    48,
+    168,
+    336
+  ],
+  "n_estimators": 600,
+  "learning_rate": 0.010008117649434562,
+  "num_leaves": 62,
+  "min_data_in_leaf": 94
+}

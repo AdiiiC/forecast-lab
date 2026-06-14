@@ -11,7 +11,7 @@ def _synthetic_hourly(n_days: int = 730, seed: int = 0):
     rng = np.random.default_rng(seed)
     n = n_days * 24
     t = np.arange(n)
-    idx = pd.date_range("2023-01-01", periods=n, freq="H")
+    idx = pd.date_range("2023-01-01", periods=n, freq="h")
 
     daily  = 12 * np.sin(2 * np.pi * t / 24 - 1.2)
     weekly =  4 * np.sin(2 * np.pi * t / 168)

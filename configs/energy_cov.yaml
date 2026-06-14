@@ -19,7 +19,10 @@ intervals:
 parallel:
   enabled: true
   backend: process
-  n_workers: 8
+  # i5-9400: 6 cores, no hyperthreading.
+  # 2 concurrent folds keeps DL models within 4 GB VRAM;
+  # the remaining 4 cores serve PyTorch's internal thread pool per fold.
+  n_workers: 2
 
 models:
   - {name: seasonal_naive}
@@ -32,19 +35,26 @@ models:
     country: US
     observed_lags: [1, 24, 168]
 
-  - {name: tft, context: 168, d_model: 64, heads: 4, epochs: 30, batch_size: 128}
+  # batch_size 128→64: 2 concurrent folds × 64 = 128 effective; fits in 4 GB VRAM.
+  - {name: tft, context: 168, d_model: 64, heads: 4, epochs: 30, batch_size: 64}
 
-  - {name: patchtst, context: 336, patch_len: 16, stride: 8, d_model: 128,
-     heads: 8, layers: 3, epochs: 30, batch_size: 128}
+  # context 336→168: halves sequence memory; d_model/heads reduced to fit 2 concurrent folds.
+  - {name: patchtst, context: 168, patch_len: 16, stride: 8, d_model: 64,
+     heads: 4, layers: 2, epochs: 30, batch_size: 64}
 
-  - {name: tide, context: 336, hidden: 256, layers: 2, epochs: 40,
-     batch_size: 128, country: US}
+  # context 336→168, hidden 256→128: each fold ~400 MB VRAM; 2 concurrent = ~800 MB.
+  - {name: tide, context: 168, hidden: 128, layers: 2, epochs: 40,
+     batch_size: 64, country: US}
 
+  # n_samples 200→100: halves sampling memory at predict time.
   - {name: deepar, context: 168, hidden: 64, layers: 2, epochs: 20,
-     dist: studentt, batch_size: 128, n_samples: 200}
+     dist: studentt, batch_size: 64, n_samples: 100}
 
-  # Zero-shot foundation model — pip install chronos-forecasting to enable
-  - {name: chronos, model_id: amazon/chronos-t5-small, num_samples: 200}
+  # gpu_memory_fraction 0.6 → 2.4 GB of 4 GB GTX 1660 Ti for Chronos weights + activations.
+  # cpu_threads 2 matches n_workers; remaining 4 cores go to PyTorch's intra-op pool.
+  # num_samples 200→100: halves T5 sampling time and peak VRAM.
+  - {name: chronos, model_id: amazon/chronos-t5-small, num_samples: 100,
+     gpu_memory_fraction: 0.6, cpu_threads: 2}
 
 output_dir: runs/energy_cov
 seed: 7
