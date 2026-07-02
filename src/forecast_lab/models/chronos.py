@@ -43,7 +43,8 @@ class ChronosModel(BaseModel):
         self.model_id = model_id
         self.num_samples = num_samples
         self.q_levels = list(q_levels)
-        self.device = device or ("cuda" if _has_cuda() else "cpu")
+        from ..device import pick_device
+        self.device = device or pick_device()
         # Fraction of GPU VRAM this process may use (0.0–1.0).
         # 0.5 leaves headroom for other models and the OS — raise if you have
         # a dedicated GPU, lower if you share it with a display or other apps.
@@ -107,10 +108,24 @@ class ChronosModel(BaseModel):
                 load_kwargs: dict = {"dtype": torch.float32, "low_cpu_mem_usage": False}
                 if self.device != "cpu":
                     load_kwargs["device_map"] = self.device
-                pipe = ChronosPipeline.from_pretrained(
-                    self.model_id,
-                    **load_kwargs,
-                )
+                try:
+                    pipe = ChronosPipeline.from_pretrained(
+                        self.model_id,
+                        **load_kwargs,
+                    )
+                except Exception:
+                    # GPU placement (e.g. Apple MPS) unsupported for this model —
+                    # fall back to CPU so the run still completes.
+                    if self.device != "cpu":
+                        self.device = "cpu"
+                        cache_key = (self.model_id, self.device)
+                        pipe = ChronosPipeline.from_pretrained(
+                            self.model_id,
+                            dtype=torch.float32,
+                            low_cpu_mem_usage=False,
+                        )
+                    else:
+                        raise
                 kind = "bolt" if self._is_bolt() else "t5"
             except Exception as e:
                 raise RuntimeError(

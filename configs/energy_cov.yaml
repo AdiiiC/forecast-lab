@@ -19,9 +19,10 @@ intervals:
 parallel:
   enabled: true
   backend: process
-  # i5-9400: 6 cores, no hyperthreading.
-  # 2 concurrent folds keeps DL models within 4 GB VRAM;
-  # the remaining 4 cores serve PyTorch's internal thread pool per fold.
+  # n_workers is an upper bound: at runtime it is auto-capped to (host cores - 1)
+  # and DL models fall back to a thread pool (see forecast_lab/device.py and
+  # parallel.py). Batch sizes below stay small so folds fit comfortably on a
+  # 4 GB GPU; on Apple MPS / larger GPUs they are simply conservative.
   n_workers: 2
 
 models:
@@ -50,9 +51,9 @@ models:
   - {name: deepar, context: 168, hidden: 64, layers: 2, epochs: 20,
      dist: studentt, batch_size: 64, n_samples: 100}
 
-  # gpu_memory_fraction 0.6 → 2.4 GB of 4 GB GTX 1660 Ti for Chronos weights + activations.
-  # cpu_threads 2 matches n_workers; remaining 4 cores go to PyTorch's intra-op pool.
-  # num_samples 200→100: halves T5 sampling time and peak VRAM.
+  # device auto-selects CUDA -> Apple MPS -> CPU at runtime.
+  # gpu_memory_fraction applies only on CUDA (ignored on MPS/CPU); cpu_threads
+  # is auto-capped to the host core count. num_samples 200->100 halves sampling.
   - {name: chronos, model_id: amazon/chronos-t5-small, num_samples: 100,
      gpu_memory_fraction: 0.6, cpu_threads: 2}
 

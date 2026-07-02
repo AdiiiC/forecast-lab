@@ -129,11 +129,8 @@ class TiDEModel(BaseModel):
 
         self.country = country
 
-        self.device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
-        )
+        from ..device import pick_device
+        self.device = pick_device()
 
     def _future_features(self, idx):
         cal = calendar_known_future(

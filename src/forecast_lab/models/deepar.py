@@ -55,7 +55,8 @@ class DeepARModel(BaseModel):
         self.context, self.hidden, self.layers, self.dropout = context, hidden, layers, dropout
         self.dist, self.epochs, self.bs, self.lr = dist, epochs, batch_size, lr
         self.n_samples = n_samples
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        from ..device import pick_device
+        self.device = pick_device()
 
     def _windows(self, y):
         L = self.context

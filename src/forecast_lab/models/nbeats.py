@@ -68,7 +68,8 @@ class NBeatsModel(BaseModel):
         self.dropout = dropout
         self.lr = lr
         self.mc_samples = mc_samples
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        from ..device import pick_device
+        self.device = pick_device()
 
     def _make_windows(self, y: np.ndarray, horizon: int):
         L = self.input_size

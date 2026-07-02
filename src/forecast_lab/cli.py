@@ -45,8 +45,16 @@ def main():
     cfg = yaml.safe_load(Path(args.config).read_text())
     set_seed(cfg.get("seed", 0))
 
+    from .device import adapt_config
+    profile = adapt_config(cfg)
+
     console = Console()
     console.rule(f"[bold]forecast-lab[/]  run={repro_hash(cfg)}")
+    _gpu = f"{profile.gpu_name} {profile.gpu_memory_gb:g}GB" if profile.gpu_name else "none"
+    console.print(
+        f"[cyan]host[/] device={profile.device}  cpu={profile.cpu_count}  "
+        f"ram={profile.total_ram_gb:g}GB  gpu={_gpu}"
+    )
 
     # ─── Data ──────────────────────────────────────────────────────────────
     y, cov = load_series(cfg["dataset"])

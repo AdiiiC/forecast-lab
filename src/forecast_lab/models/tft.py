@@ -74,7 +74,8 @@ class TFTModel(BaseModel):
         self.d, self.heads, self.dropout = d_model, heads, dropout
         self.epochs, self.bs, self.lr = epochs, batch_size, lr
         self.q_levels = tuple(q_levels)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        from ..device import pick_device
+        self.device = pick_device()
 
     def _windows(self, y, horizon):
         L = self.context

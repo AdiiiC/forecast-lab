@@ -156,11 +156,8 @@ class PatchTSTModel(BaseModel):
 
         self.q_levels = tuple(q_levels)
 
-        self.device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
-        )
+        from ..device import pick_device
+        self.device = pick_device()
 
     def _windows(self, y, horizon):
         L = self.context

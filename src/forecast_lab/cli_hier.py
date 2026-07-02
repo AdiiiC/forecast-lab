@@ -29,8 +29,11 @@ def main():
     args = ap.parse_args()
     cfg = yaml.safe_load(Path(args.config).read_text())
     set_seed(cfg.get("seed", 0))
+    from .device import adapt_config
+    profile = adapt_config(cfg)
     console = Console()
     console.rule(f"[bold]forecast-lab hierarchical[/]  run={repro_hash(cfg)}")
+    console.print(f"[cyan]host[/] device={profile.device}  cpu={profile.cpu_count}")
 
     h = synthetic_retail(**cfg["dataset"].get("synthetic", {}))
     console.print(f"hierarchy: total nodes={h.n_total}  bottom={h.n_bottom}  "
