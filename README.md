@@ -45,7 +45,8 @@ nothing beats seasonal-naive, the CLI says so out loud.
 - Streaming refits and an incremental forecaster interface
 - FastAPI inference service + Dockerfile
 - Airflow DAG and Prefect flow for daily train → score → monitor
-- Streamlit dashboard for interactive backtest inspection
+- React + Vite dashboard (served by a read-only FastAPI artifact API) for
+  interactive backtest inspection
 - pytest + ruff + CI workflow
 
 **Hierarchical forecasting**
@@ -79,8 +80,25 @@ PYTHONPATH=src python -m forecast_lab.cli \
     --config configs/energy_v2.yaml --tune --track
 
 mlflow ui --backend-store-uri file:./mlruns          # browse runs
-streamlit run dashboard/app.py                       # interactive UI
 ```
+
+## Dashboard (React + FastAPI)
+
+The dashboard is a React (Vite + TypeScript) single-page app backed by a
+read-only FastAPI service that streams the `runs/<name>/` artifacts. Start both
+processes from the project root:
+
+```bash
+# 1. Artifact API — must run from the project root so runs/ resolves
+make api          # uvicorn api.main:app --port 8001
+
+# 2. Web client — installs deps and starts Vite on http://localhost:5173
+make web          # cd web && npm install && npm run dev
+```
+
+Vite proxies `/api` to the FastAPI service, so the browser talks to a single
+origin. The API contains no modelling logic; the backtest pipeline remains the
+single source of truth for how the artifacts are produced.
 
 ## Ready-made configs
 
@@ -125,8 +143,11 @@ forecast-lab/
 │   ├── energy_adaptive.yaml
 │   ├── intermittent.yaml
 │   └── retail_hier.yaml
-├── dashboard/
-│   └── app.py                       # Streamlit UI
+├── api/
+│   └── main.py                      # read-only FastAPI artifact service
+├── web/                             # React + Vite dashboard
+│   ├── index.html
+│   └── src/
 ├── pipelines/
 │   ├── airflow_dag.py               # daily train → score → monitor
 │   └── prefect_flow.py

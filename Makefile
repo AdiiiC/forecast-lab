@@ -1,4 +1,4 @@
-.PHONY: install test lint bench bench-cov bench-hier serve ui clean
+.PHONY: install test lint bench bench-cov bench-hier serve api web clean
 
 install:
     pip install -e .[dl,mlops,serving,dashboard,test]
@@ -21,8 +21,11 @@ bench-hier:
 serve:
     PYTHONPATH=src uvicorn forecast_lab.serving.app:app --host 0.0.0.0 --port 8000
 
-ui:
-    streamlit run dashboard/app.py
+api:
+	uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
+
+web:
+	cd web && npm install && npm run dev
 
 clean:
     rm -rf runs mlruns .pytest_cache __pycache__ */__pycache__ */*/__pycache__

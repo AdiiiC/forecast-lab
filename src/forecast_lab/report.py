@@ -2,6 +2,7 @@
 business-cost metrics, DM-test significance, and calibration diagnostics.
 """
 from __future__ import annotations
+import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -16,6 +17,14 @@ from .metrics_prob import crps_sample, energy_score, quantile_loss_mean
 from .stats_tests import diebold_mariano
 from .calibration import plot_diagnostics
 from .backtest import FoldResult
+
+
+def _finite_list(arr) -> list:
+    """Convert an array to a JSON-safe list, mapping non-finite values to None."""
+    out = []
+    for v in np.asarray(arr, dtype=float).ravel():
+        out.append(float(v) if np.isfinite(v) else None)
+    return out
 
 
 def _gather(folds):
@@ -126,6 +135,7 @@ def plot_folds(results: dict, out: Path, alpha: float):
     import matplotlib.pyplot as plt
     out.mkdir(parents=True, exist_ok=True)
 
+    series_export: dict = {}
     for name, folds in results.items():
         f = folds[-1]
         h = len(f.y_true)
@@ -133,7 +143,8 @@ def plot_folds(results: dict, out: Path, alpha: float):
         fig, ax = plt.subplots(figsize=(9, 3.5))
         ax.plot(x, f.y_true, label="actual", lw=2, color="black")
         ax.plot(x, f.y_pred, label="forecast", lw=2)
-        if np.isfinite(f.lo).all():
+        has_pi = np.isfinite(f.lo).all()
+        if has_pi:
             ax.fill_between(x, f.lo, f.hi, alpha=0.2,
                             label=f"{int((1-alpha)*100)}% PI")
         ax.set_title(f"{name} — last fold")
@@ -142,6 +153,17 @@ def plot_folds(results: dict, out: Path, alpha: float):
         fig.tight_layout()
         fig.savefig(out / f"{name}.png", dpi=130)
         plt.close(fig)
+
+        series_export[name] = {
+            "actual": _finite_list(f.y_true),
+            "forecast": _finite_list(f.y_pred),
+            "lo": _finite_list(f.lo) if has_pi else None,
+            "hi": _finite_list(f.hi) if has_pi else None,
+        }
+
+    (out.parent / "forecasts.json").write_text(
+        json.dumps({"alpha": float(alpha), "series": series_export})
+    )
 
     # Reliability table (nominal vs. empirical coverage at several α levels)
     rel_rows = []

@@ -12,7 +12,7 @@ mlops     = ["mlflow>=2.12", "optuna>=3.6"]
 serving   = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "gunicorn>=21"]
 streaming = ["kafka-python>=2.0"]
 warehouses = ["snowflake-connector-python>=3.7", "google-cloud-bigquery>=3.20"]
-dashboard = ["streamlit>=1.33"]
+dashboard = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
 pipelines = ["apache-airflow>=2.9", "prefect>=2.18"]
 test      = ["pytest>=8", "ruff>=0.4"]
 

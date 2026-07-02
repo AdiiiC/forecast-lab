@@ -31,8 +31,15 @@ mlflow server `
 >>   --port 5000 (After Step 7 starts running)
 Open: http://localhost:5000
 
-pip install streamlit
-streamlit run dashboard/app.py
+Dashboard (React + FastAPI) - run TWO processes from the project root:
+
+# 1. Artifact API (Python venv active, run from project root so runs/ resolves)
+uvicorn api.main:app --host 0.0.0.0 --port 8001
+
+# 2. Web client (Node 18+): installs deps and starts Vite on http://localhost:5173
+cd web
+npm install
+npm run dev
 
 pip install fastapi "uvicorn[standard]" gunicorn
 $env:PYTHONPATH="src"
