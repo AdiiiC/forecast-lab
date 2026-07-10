@@ -16,6 +16,9 @@ from .patchtst import PatchTSTModel
 from .tide import TiDEModel
 from .chronos import ChronosModel
 from .croston import CrostonModel, TSBModel, ADIDAModel
+from .ensemble import EnsembleModel
+from .stacking import StackingModel
+from .best_of_n import BestOfN
 from ..conformal import ConformalWrapper
 from ..conformal_adaptive import ACIWrapper, EnbPIWrapper
 
@@ -34,10 +37,13 @@ REGISTRY = {
     "croston":        CrostonModel,
     "tsb":            TSBModel,
     "adida":          ADIDAModel,
+    "ensemble":       EnsembleModel,
+    "stacking":       StackingModel,
+    "best_of_n":      BestOfN,
 }
 
 
-_WRAPPERS = {"aci", "enbpi", "conformal"}
+_WRAPPERS = {"aci", "enbpi", "conformal", "ensemble", "stacking", "best_of_n"}
 
 
 def build(spec: dict, season_length: int):
@@ -50,6 +56,15 @@ def build(spec: dict, season_length: int):
     name = spec.pop("name")
 
     if name in _WRAPPERS:
+        if name in ("ensemble", "stacking", "best_of_n"):
+            # Pool wrappers expect a list of sub-specs under "members"
+            members = [build(s, season_length=season_length) for s in spec.pop("members", [])]
+            if name == "ensemble":
+                return EnsembleModel(members, **spec)
+            if name == "stacking":
+                return StackingModel(members, **spec)
+            return BestOfN(members, **spec)
+
         inner = build(spec.pop("base"), season_length=season_length)
         if name == "aci":
             return ACIWrapper(inner, **spec)
