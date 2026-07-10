@@ -46,3 +46,37 @@ export interface ForecastsResponse {
   alpha: number | null;
   series: Record<string, ForecastSeries>;
 }
+
+// ── Run comparison ─────────────────────────────────────────────────────────
+
+export interface CompareDiffRow {
+  model: string;
+  [key: string]: number | string | null;
+}
+
+export interface CompareResponse {
+  run_a: string;
+  run_b: string;
+  shared_models: string[];
+  shared_metrics: string[];
+  diff: CompareDiffRow[];
+}
+
+// ── Async jobs ─────────────────────────────────────────────────────────────
+
+export type JobStatus = "running" | "success" | "failed";
+
+export interface JobResponse {
+  job_id: string;
+  status: JobStatus;
+  config: string;
+  elapsed_seconds: number | null;
+  exit_code: number | null;
+  log_tail: string[];
+}
+
+export interface JobSummary {
+  job_id: string;
+  status: JobStatus;
+  config: string;
+}

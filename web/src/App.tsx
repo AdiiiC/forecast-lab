@@ -27,8 +27,11 @@ import { ForecastChart } from "./components/ForecastChart";
 import { DiagnosticsCharts } from "./components/DiagnosticsCharts";
 import { Decisions } from "./components/Decisions";
 import { ErrorState, InfoState, Loading } from "./components/States";
+import { OverviewTab } from "./components/OverviewTab";
+import { CompareTab } from "./components/CompareTab";
+import { JobRunner } from "./components/JobRunner";
 
-const TABS = ["Leaderboard", "Forecasts", "Diagnostics", "Decisions"];
+const TABS = ["Overview", "Leaderboard", "Forecasts", "Diagnostics", "Decisions", "Compare", "Jobs"];
 
 function messageOf(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.message : fallback;
@@ -162,12 +165,19 @@ export function App() {
 
                 {active === 0 && (
                   <>
+                    <h2 className="section-header">At a Glance</h2>
+                    <OverviewTab rows={rows} columns={columns} />
+                  </>
+                )}
+
+                {active === 1 && (
+                  <>
                     <h2 className="section-header">Model Leaderboard</h2>
                     <Leaderboard columns={columns} rows={rows} run={selected} />
                   </>
                 )}
 
-                {active === 1 && (
+                {active === 2 && (
                   <>
                     <h2 className="section-header">Per-model Forecast Plots</h2>
                     {forecasts?.exists &&
@@ -194,7 +204,7 @@ export function App() {
                   </>
                 )}
 
-                {active === 2 && (
+                {active === 3 && (
                   <>
                     <h2 className="section-header">Calibration Diagnostics</h2>
                     {reliability.length > 0 ? (
@@ -211,7 +221,7 @@ export function App() {
                   </>
                 )}
 
-                {active === 3 && (
+                {active === 4 && (
                   <>
                     <h2 className="section-header">Decision Artifacts</h2>
                     {decisionsError ? (
@@ -219,6 +229,20 @@ export function App() {
                     ) : (
                       <Decisions decisions={decisions} />
                     )}
+                  </>
+                )}
+
+                {active === 5 && (
+                  <>
+                    <h2 className="section-header">Compare Experiments</h2>
+                    <CompareTab runA={selected} runs={runs} />
+                  </>
+                )}
+
+                {active === 6 && (
+                  <>
+                    <h2 className="section-header">Run a Backtest</h2>
+                    <JobRunner />
                   </>
                 )}
               </>
