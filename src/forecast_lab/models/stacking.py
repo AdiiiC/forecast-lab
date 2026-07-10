@@ -82,7 +82,6 @@ class StackingModel(BaseModel):
             train_y = y.iloc[:te]
             for j, m in enumerate(self.models):
                 mc = copy.deepcopy(m)
-                sig = inspect.signature(mc.fit)
                 mc.fit(train_y)
                 fc = mc.predict(ee - te)
                 oof[te:ee, j] = fc.mean[: (ee - te)]

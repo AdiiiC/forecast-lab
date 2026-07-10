@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from .backtest import backtest
-from .metrics import mae, winkler_score, coverage as cov_fn
+from .metrics import mae, winkler_score
 from .models import build
 
 ObjectiveMode = Literal["single", "pareto"]
@@ -28,10 +28,11 @@ ObjectiveMode = Literal["single", "pareto"]
 
 def _single_objective(base_spec, y, season_length, bt_cfg, alpha, search_space):
     def objective(trial):
+        import optuna as _optuna
         spec = _sample_spec(trial, base_spec, search_space)
         folds = _run_backtest(spec, y, season_length, bt_cfg, alpha, trial)
         if folds is None:
-            raise optuna.TrialPruned()
+            raise _optuna.TrialPruned()
         y_true = np.concatenate([f.y_true for f in folds])
         y_pred = np.concatenate([f.y_pred for f in folds])
         return mae(y_true, y_pred)
@@ -41,10 +42,11 @@ def _single_objective(base_spec, y, season_length, bt_cfg, alpha, search_space):
 def _pareto_objective(base_spec, y, season_length, bt_cfg, alpha, search_space):
     """Returns (MAE, Winkler) for NSGA-II multi-objective optimisation."""
     def objective(trial):
+        import optuna as _optuna
         spec = _sample_spec(trial, base_spec, search_space)
         folds = _run_backtest(spec, y, season_length, bt_cfg, alpha, trial)
         if folds is None:
-            raise optuna.TrialPruned()
+            raise _optuna.TrialPruned()
         y_true = np.concatenate([f.y_true for f in folds])
         y_pred = np.concatenate([f.y_pred for f in folds])
         lo = np.concatenate([f.lo for f in folds])
@@ -75,7 +77,6 @@ def _sample_spec(trial, base_spec, search_space):
 
 def _run_backtest(spec, y, season_length, bt_cfg, alpha, trial):
     """Run backtest; report intermediate values for pruning."""
-    import optuna
     model = build(spec, season_length=season_length)
     folds = backtest(
         model, y,

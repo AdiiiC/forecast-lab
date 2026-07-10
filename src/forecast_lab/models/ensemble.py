@@ -58,7 +58,7 @@ class EnsembleModel(BaseModel):
         """Fit each model on a training prefix; evaluate on the holdout tail."""
         n = len(y)
         split = max(horizon, int(n * (1 - self.holdout_frac)))
-        train_ho, test_ho = y.iloc[:split], y.iloc[split : split + horizon]
+        test_ho = y.iloc[split : split + horizon]
         h = len(test_ho)
         if h == 0:
             return np.ones(len(self.models_)) / len(self.models_)

@@ -80,7 +80,6 @@ class ADWIN:
         if n < 4:
             return False
         w = np.array(self._window)
-        total_mean = w.mean()
         # Check all possible cut-points
         for cut in range(2, n - 1):
             n0, n1 = cut, n - cut
